@@ -4,6 +4,8 @@ import '../../global.css';
 import { useFonts } from 'expo-font';
 import { useEffect } from "react";
 
+SplashScreen.preventAutoHideAsync(); // keep the splash screen visible while we fetch resources
+
 export default function RootLayout() {
 
   // load fonts
