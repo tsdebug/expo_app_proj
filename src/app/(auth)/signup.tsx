@@ -4,6 +4,8 @@ import { styled } from 'nativewind';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView as RNSafeAreaView } from 'react-native-safe-area-context';
+import { posthog } from '../../../lib/posthog';
+import { posthogLogger } from '../../../lib/posthog-logger';
 
 const SafeAreaView = styled(RNSafeAreaView);
 
@@ -55,6 +57,19 @@ const SignUp = () => {
                     if (session?.currentTask) {
                         console.log(session?.currentTask);
                         return;
+                    }
+
+                    if (session?.user?.id) {
+                        posthog?.identify(session.user.id, {
+                            $set: { email: emailAddress },
+                        });
+                        posthog?.capture('user_signed_up', {
+                            sign_up_method: 'email_code',
+                        });
+                        posthogLogger.info('Account created', {
+                            event: 'account_created',
+                            sign_up_method: 'email_code',
+                        });
                     }
 
                     const url = decorateUrl('/(tabs)');

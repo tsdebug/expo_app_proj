@@ -4,6 +4,8 @@ import { styled } from 'nativewind';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView as RNSafeAreaView } from 'react-native-safe-area-context';
+import { posthog } from '../../../lib/posthog';
+import { posthogLogger } from '../../../lib/posthog-logger';
 
 const SafeAreaView = styled(RNSafeAreaView);
 
@@ -43,6 +45,19 @@ const SignIn = () => {
                     if (session?.currentTask) {
                         console.log(session?.currentTask);
                         return;
+                    }
+
+                    if (session?.user?.id) {
+                        posthog?.identify(session.user.id, {
+                            $set: { email: emailAddress },
+                        });
+                        posthog?.capture('user_signed_in', {
+                            sign_in_method: 'password',
+                        });
+                        posthogLogger.info('Authentication completed', {
+                            event: 'authentication_completed',
+                            authentication_method: 'password',
+                        });
                     }
 
                     const url = decorateUrl('/(tabs)');
@@ -85,6 +100,19 @@ const SignIn = () => {
                     if (session?.currentTask) {
                         console.log(session?.currentTask);
                         return;
+                    }
+
+                    if (session?.user?.id) {
+                        posthog?.identify(session.user.id, {
+                            $set: { email: emailAddress },
+                        });
+                        posthog?.capture('user_signed_in', {
+                            sign_in_method: 'email_code',
+                        });
+                        posthogLogger.info('Authentication completed', {
+                            event: 'authentication_completed',
+                            authentication_method: 'email_code',
+                        });
                     }
 
                     const url = decorateUrl('/(tabs)');

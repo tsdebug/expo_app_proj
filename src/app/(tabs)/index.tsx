@@ -16,6 +16,7 @@ import {
 } from "../../../constants/data";
 import { icons } from "../../../constants/icons";
 import { formatCurrency } from "../../../lib/utils";
+import { posthog } from "../../../lib/posthog";
 
 const SafeAreaView = styled(RNSaftAreaView);
 
@@ -64,6 +65,12 @@ export default function App() {
   const [expandedSubscriptionId, setExpandedSubscriptionId] = useState<string | null>(null);
 
   const handleSubscriptionPress = (id: string) => {
+    if (expandedSubscriptionId !== id) {
+      posthog?.capture('subscription_details_viewed', {
+        subscription_id: id,
+      });
+    }
+
     setExpandedSubscriptionId((currentId) => (currentId === id ? null : id));
   };
 
