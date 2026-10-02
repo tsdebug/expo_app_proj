@@ -1,47 +1,47 @@
-import { SplashScreen, Stack } from "expo-router";
 import '../../global.css';
-
-import { useFonts } from 'expo-font';
+import { ClerkProvider, useAuth } from '@clerk/expo';
+import { tokenCache } from '@clerk/expo/token-cache';
+import { useFonts } from "expo-font";
+import { SplashScreen, Stack } from "expo-router";
 import { useEffect } from "react";
-import { Text, View } from "react-native";
 
-SplashScreen.preventAutoHideAsync(); // keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
+const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 
-  // load fonts
-  const [fontsLoaded, fontError] = useFonts({
-    'sans-regular': require('@/assets/fonts/PlusJakartaSans-Regular.ttf'),
-    'sans-bold': require('@/assets/fonts/PlusJakartaSans-Bold.ttf'),
-    'sans-medium': require('@/assets/fonts/PlusJakartaSans-Medium.ttf'),
-    'sans-semibold': require('@/assets/fonts/PlusJakartaSans-SemiBold.ttf'),
-    'sans-extrabold': require('@/assets/fonts/PlusJakartaSans-ExtraBold.ttf'),
-    'sans-light': require('@/assets/fonts/PlusJakartaSans-Light.ttf'),
+if (!publishableKey) {
+  throw new Error('Add your Clerk Publishable Key to the .env file');
+}
+
+function RootLayoutContent() {
+  const { isLoaded: authLoaded } = useAuth();
+
+  const [fontsLoaded] = useFonts({
+    'sans-regular': require('../../assets/fonts/PlusJakartaSans-Regular.ttf'),
+    'sans-bold': require('../../assets/fonts/PlusJakartaSans-Bold.ttf'),
+    'sans-medium': require('../../assets/fonts/PlusJakartaSans-Medium.ttf'),
+    'sans-semibold': require('../../assets/fonts/PlusJakartaSans-SemiBold.ttf'),
+    'sans-extrabold': require('../../assets/fonts/PlusJakartaSans-ExtraBold.ttf'),
+    'sans-light': require('../../assets/fonts/PlusJakartaSans-Light.ttf')
   })
 
-
-  // wait for fonts to load
   useEffect(() => {
-    if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync();
+    // Hide splash only when both fonts and auth are loaded
+    if (fontsLoaded && authLoaded) {
+      SplashScreen.hideAsync()
     }
-  }, [fontsLoaded, fontError])
+  }, [fontsLoaded, authLoaded])
 
-  if (!fontsLoaded && !fontError) return null;
-  if (fontError) {
-    return (
-      <View className="flex-1 items-center justify-center bg-background p-5">
-        <Text className="text-center text-base text-foreground">
-          Unable to load the app fonts. Please restart the app and try again.
-        </Text>
-      </View>
-    );
-  }
+  // Don't render app until both are ready
+  if (!fontsLoaded || !authLoaded) return null;
 
+  return <Stack screenOptions={{ headerShown: false }} />;
+}
+
+export default function RootLayout() {
   return (
-    <Stack
-      initialRouteName="(tabs)"
-      screenOptions={{ headerShown: false }}
-    />
+    <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+      <RootLayoutContent />
+    </ClerkProvider>
   );
 }
