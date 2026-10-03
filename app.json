@@ -11,6 +11,7 @@
       "icon": "./assets/expo.icon"
     },
     "android": {
+      "package": "com.tsdebug.expoapp",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -33,24 +34,29 @@
           "imageWidth": 76
         }
       ],
-      
       [
-        "expo-font", {
+        "expo-font",
+        {
           "fonts": [
-            "./assets/fonts/PlusJackartaSans-Regular.ttf",
-            "./assets/fonts/PlusJackartaSans-Bold.ttf",
-            "./assets/fonts/PlusJackartaSans-Medium.ttf",
-            "./assets/fonts/PlusJackartaSans-SemiBold.ttf",
-            "./assets/fonts/PlusJackartaSans-ExtraBold.ttf",
-            "./assets/fonts/PlusJackartaSans-Light.ttf"
+            "./assets/fonts/PlusJakartaSans-Regular.ttf",
+            "./assets/fonts/PlusJakartaSans-Bold.ttf",
+            "./assets/fonts/PlusJakartaSans-Medium.ttf",
+            "./assets/fonts/PlusJakartaSans-SemiBold.ttf",
+            "./assets/fonts/PlusJakartaSans-ExtraBold.ttf",
+            "./assets/fonts/PlusJakartaSans-Light.ttf"
           ]
         }
       ]
-
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "2a69efed-c793-467f-8a94-5afcc87d67a3"
+      }
     }
   }
 }
