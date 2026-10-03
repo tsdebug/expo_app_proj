@@ -15,40 +15,51 @@ export default function Insights() {
 
   const insightData = useMemo(() => {
     const activeSubscriptions = subscriptions.filter(
-      (subscription) => subscription.status !== "cancelled",
+      (subscription) => subscription.status === "active",
     );
-    const monthlySpend = activeSubscriptions.reduce(
-      (total, subscription) =>
-        total + subscription.price / (subscription.billing === "Yearly" ? 12 : 1),
-      0,
-    );
-    const yearlySpend = monthlySpend * 12;
-    const categoryTotals = activeSubscriptions.reduce<Record<string, number>>((totals, subscription) => {
-      const category = subscription.category || "Other";
-      totals[category] =
-        (totals[category] || 0) +
+    const currencyTotals = activeSubscriptions.reduce<Record<string, {
+      monthlySpend: number;
+      categories: Record<string, number>;
+    }>>((totals, subscription) => {
+      const currency = subscription.currency || "USD";
+      const monthlyAmount =
         subscription.price / (subscription.billing === "Yearly" ? 12 : 1);
+      const category = subscription.category || "Other";
+      const currencyTotal = totals[currency] || { monthlySpend: 0, categories: {} };
+      currencyTotal.monthlySpend += monthlyAmount;
+      currencyTotal.categories[category] =
+        (currencyTotal.categories[category] || 0) + monthlyAmount;
+      totals[currency] = currencyTotal;
       return totals;
     }, {});
-    const categories = Object.entries(categoryTotals)
-      .sort(([, first], [, second]) => second - first)
-      .map(([name, amount], index) => ({
-        name,
-        amount,
-        color: CATEGORY_COLORS[index % CATEGORY_COLORS.length],
-      }));
+    const currencyGroups = Object.entries(currencyTotals).map(([currency, totals]) => {
+      const categories = Object.entries(totals.categories)
+        .sort(([, first], [, second]) => second - first)
+        .map(([name, amount], index) => ({
+          name,
+          amount,
+          color: CATEGORY_COLORS[index % CATEGORY_COLORS.length],
+        }));
+      return {
+        currency,
+        monthlySpend: totals.monthlySpend,
+        yearlySpend: totals.monthlySpend * 12,
+        categories,
+      };
+    });
     const upcoming = [...activeSubscriptions]
-      .filter((subscription) => subscription.renewalDate)
+      .filter(
+        (subscription) =>
+          subscription.renewalDate && dayjs(subscription.renewalDate).isAfter(dayjs()),
+      )
       .sort(
         (first, second) =>
           dayjs(first.renewalDate).valueOf() - dayjs(second.renewalDate).valueOf(),
       )
       .slice(0, 3);
 
-    return { activeSubscriptions, monthlySpend, yearlySpend, categories, upcoming };
+    return { activeSubscriptions, currencyGroups, upcoming };
   }, [subscriptions]);
-
-  const largestCategory = insightData.categories[0];
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -60,47 +71,39 @@ export default function Insights() {
         <Text className="insights-title">Insights</Text>
         <Text className="insights-subtitle">A clear view of your recurring spending</Text>
 
-        <View className="insights-hero">
-          <Text className="insights-hero-label">Estimated monthly spend</Text>
-          <Text className="insights-hero-amount">{formatCurrency(insightData.monthlySpend)}</Text>
-          <View className="insights-hero-footer">
-            <Text className="insights-hero-meta">
-              {formatCurrency(insightData.yearlySpend)} estimated yearly
+        {insightData.currencyGroups.map((group) => (
+          <View key={group.currency} className="insights-hero">
+            <Text className="insights-hero-label">
+              Estimated monthly spend ({group.currency})
             </Text>
-            <Text className="insights-hero-meta">
-              {insightData.activeSubscriptions.length} active
+            <Text className="insights-hero-amount">
+              {formatCurrency(group.monthlySpend, group.currency)}
             </Text>
+            <View className="insights-hero-footer">
+              <Text className="insights-hero-meta">
+                {formatCurrency(group.yearlySpend, group.currency)} estimated yearly
+              </Text>
+              <Text className="insights-hero-meta">
+                {insightData.activeSubscriptions.filter(
+                  (subscription) => (subscription.currency || "USD") === group.currency,
+                ).length} active
+              </Text>
+            </View>
           </View>
-        </View>
-
-        <View className="insights-summary-row">
-          <View className="insights-summary-card">
-            <Text className="insights-summary-label">Top category</Text>
-            <Text className="insights-summary-value" numberOfLines={1}>
-              {largestCategory?.name || "No data"}
-            </Text>
-            <Text className="insights-summary-meta">
-              {largestCategory ? formatCurrency(largestCategory.amount) : "$0.00"} / month
-            </Text>
-          </View>
-          <View className="insights-summary-card">
-            <Text className="insights-summary-label">Categories</Text>
-            <Text className="insights-summary-value">{insightData.categories.length}</Text>
-            <Text className="insights-summary-meta">spending groups</Text>
-          </View>
-        </View>
+        ))}
 
         <Text className="insights-section-title">Spending by category</Text>
-        <View className="insights-card">
-          {insightData.categories.length === 0 ? (
+        {insightData.currencyGroups.length === 0 ? (
+          <View className="insights-card">
             <Text className="home-empty-state">Add subscriptions to see your spending breakdown.</Text>
-          ) : (
-            insightData.categories.map((category) => {
-              const percentage =
-                insightData.monthlySpend > 0
-                  ? (category.amount / insightData.monthlySpend) * 100
-                  : 0;
-              return (
+          </View>
+        ) : (
+          insightData.currencyGroups.map((group) => (
+            <View key={group.currency} className="insights-card">
+              <Text className="insights-summary-label">{group.currency}</Text>
+              {group.categories.map((category) => {
+                const percentage = (category.amount / group.monthlySpend) * 100;
+                return (
                 <View key={category.name} className="insights-category">
                   <View className="insights-category-header">
                     <View className="insights-category-name">
@@ -108,7 +111,7 @@ export default function Insights() {
                       <Text className="insights-category-label">{category.name}</Text>
                     </View>
                     <Text className="insights-category-amount">
-                      {formatCurrency(category.amount)}
+                      {formatCurrency(category.amount, group.currency)}
                     </Text>
                   </View>
                   <View className="insights-progress-track">
@@ -118,10 +121,11 @@ export default function Insights() {
                     />
                   </View>
                 </View>
-              );
-            })
-          )}
-        </View>
+                );
+              })}
+            </View>
+          ))
+        )}
 
         <Text className="insights-section-title">Upcoming renewals</Text>
         <View className="insights-card">
