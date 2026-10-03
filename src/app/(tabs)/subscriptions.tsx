@@ -11,11 +11,12 @@ const Subscriptions = () => {
     const [searchQuery, setSearchQuery] = useState("");
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const subscriptions = useSubscriptionStore();
+    const normalizedQuery = searchQuery.trim().toLowerCase();
 
     const filteredSubscriptions = subscriptions.filter((subscription) =>
-        subscription.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        subscription.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        subscription.plan?.toLowerCase().includes(searchQuery.toLowerCase())
+        subscription.name.toLowerCase().includes(normalizedQuery) ||
+        subscription.category?.toLowerCase().includes(normalizedQuery) ||
+        subscription.plan?.toLowerCase().includes(normalizedQuery)
     );
 
     return (

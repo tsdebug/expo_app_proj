@@ -66,7 +66,7 @@ export default function Home() {
 
   const handleSubscriptionPress = (id: string) => {
     if (expandedSubscriptionId !== id) {
-      posthog?.capture("subscription_details_viewed", { subscription_id: id });
+      posthog?.capture("subscription_card_expanded", { subscription_id: id });
     }
     setExpandedSubscriptionId((currentId) => (currentId === id ? null : id));
   };
